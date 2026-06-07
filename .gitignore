@@ -1,0 +1,95 @@
+# Environnements virtuels
+venv/
+.venv/
+.claude
+env/
+
+# Fichiers Python compilés / cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Données téléchargées (MNIST via torchvision)
+data/
+
+# Logs
+*.log
+
+# Variables d'environnement (peut contenir des secrets)
+.env
+
+# Fichiers de configuration / build d'IDE
+.vscode/
+.idea/
+*.swp
+
+# Modèles entraînés / checkpoints PyTorch
+*.pt
+*.pth
+*.ckpt
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Système
+.DS_Store
+Thumbs.db
+
+# ============================================================
+# Unity
+# ============================================================
+
+# Dossiers générés/temporaires de l'éditeur Unity
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+
+# Fichiers de cache des packages Unity
+[Aa]ssets/[Aa]ssetStoreTools*
+.utmp/
+
+# Fichiers générés par les IDE / outils Unity (Visual Studio, Rider, VS Code...)
+.vs/
+ExportedObj/
+.consulo/
+*.csproj
+*.unityproj
+*.sln
+*.slnx
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Fichiers générés par les outils de build Unity
+*.apk
+*.aab
+*.unitypackage
+*.app
+*.ipa
+
+# Fichiers générés en cas de crash de l'éditeur
+sysinfo.txt
+
+# Fichiers de capture vidéo générés par Unity
+*.mp4
+*.mov
+
+# Données de packages crashés/téléchargés
+crashlytics-build.properties
+
