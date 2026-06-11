@@ -3,6 +3,9 @@ venv/
 .venv/
 .claude
 env/
+rapport/generate_pptx.py
+rapport/main.tex
+rapport/guide.md
 
 # Fichiers Python compilés / cache
 __pycache__/

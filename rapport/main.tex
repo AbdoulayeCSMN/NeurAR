@@ -1,0 +1,685 @@
+\documentclass[12pt,a4paper]{report}
+
+% ---------------------------------------------------------------------
+% Packages
+% ---------------------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm,headheight=14pt]{geometry}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, shapes.geometric}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{caption}
+
+% ---------------------------------------------------------------------
+% Couleurs
+% ---------------------------------------------------------------------
+\definecolor{accent}{HTML}{1F4E79}
+\definecolor{accentlight}{HTML}{5B9BD5}
+\definecolor{textgray}{HTML}{666666}
+
+% ---------------------------------------------------------------------
+% Mise en forme des titres (sobre, sans cadres)
+% ---------------------------------------------------------------------
+\titleformat{\chapter}[hang]{\normalfont\Huge\bfseries\color{accent}}{\thechapter.}{20pt}{\Huge}
+\titleformat{\section}{\normalfont\Large\bfseries\color{accent}}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\large\bfseries\color{accentlight}}{\thesubsection}{1em}{}
+
+% ---------------------------------------------------------------------
+% En-têtes / pieds de page
+% ---------------------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyhead[L]{\small NeurAR -- Rapport de projet}
+\fancyhead[R]{\small \leftmark}
+\fancyfoot[C]{\thepage}
+
+% ---------------------------------------------------------------------
+% Hyperliens
+% ---------------------------------------------------------------------
+\hypersetup{
+    colorlinks=true,
+    linkcolor=accent,
+    citecolor=accent,
+    urlcolor=accent,
+    pdftitle={NeurAR - Rapport de projet},
+    pdfauthor={CHAIBOU SAIDOU ABDOULAYE}
+}
+
+\begin{document}
+
+% =======================================================================
+% Page de titre
+% =======================================================================
+\begin{titlepage}
+    \centering
+    \vspace*{1.5cm}
+
+    {\Large \textsc{Projet de fin d'\'etudes}}\\[0.3cm]
+    {\small R\'ealit\'e augment\'ee \& Intelligence artificielle}\\[2.5cm]
+
+    {\Huge \bfseries \color{accent} NeurAR}\\[0.6cm]
+    {\Large Visualisation en r\'ealit\'e augment\'ee\\ d'un r\'eseau de neurones en fonctionnement}\\[2.5cm]
+
+    \begin{center}
+    \begin{tabular}{ll}
+        \textbf{R\'ealis\'e par :} & CHAIBOU SAIDOU ABDOULAYE \\[0.4cm]
+        \textbf{Encadr\'e par :} & Pr.~Tawfik Masrour \\
+                                  & Pr.~Ajebli Aymane \\
+                                  & Pr.~Maalouf Imad \\
+    \end{tabular}
+    \end{center}
+
+    \vfill
+
+    {\large Ann\'ee universitaire 2025 -- 2026}
+
+\end{titlepage}
+
+% =======================================================================
+% Résumé
+% =======================================================================
+\chapter*{R\'esum\'e}
+\addcontentsline{toc}{chapter}{R\'esum\'e}
+
+Les r\'eseaux de neurones sont aujourd'hui au c\oe ur de la plupart des
+applications d'intelligence artificielle, mais leur fonctionnement interne
+reste difficile \`a appr\'ehender pour les \'etudiants et les personnes
+d\'ecouvrant le domaine. Le projet \textbf{NeurAR} propose une solution
+originale \`a ce probl\`eme : visualiser, en \textbf{r\'ealit\'e augment\'ee},
+un r\'eseau de neurones de type \textit{Multi-Layer Perceptron} (MLP) en train
+de fonctionner, couche par couche, en temps r\'eel.
+
+Le syst\`eme repose sur trois composants principaux : un \textbf{mod\`ele
+PyTorch} entra\^in\'e sur le jeu de donn\'ees MNIST, un \textbf{backend
+FastAPI} exposant une API REST et un canal WebSocket temps r\'eel, et une
+\textbf{application Unity} en r\'ealit\'e augment\'ee qui re\c{c}oit ces
+donn\'ees et les transforme en une repr\'esentation 3D anim\'ee et
+interactive. L'utilisateur peut ainsi observer en direct la propagation
+avant (\textit{forward pass}) et la r\'etropropagation (\textit{backward
+pass}) du r\'eseau, manipuler la sc\`ene en AR (rotation, zoom, s\'election
+de neurone) et suivre l'\'evolution de la perte et de la pr\'ecision du
+mod\`ele.
+
+Ce rapport pr\'esente le contexte et les objectifs du projet, l'architecture
+technique mise en place, les choix d'impl\'ementation pour le mod\`ele de
+r\'eseau de neurones, le protocole de communication temps r\'eel, ainsi que
+l'application Unity AR. Il revient \'egalement sur les principales
+difficult\'es rencontr\'ees, les solutions apport\'ees, et propose des pistes
+d'am\'elioration pour la suite du projet.
+
+% =======================================================================
+% Table des matières
+% =======================================================================
+\tableofcontents
+
+% =======================================================================
+\chapter{Introduction}
+
+\section{Contexte}
+
+L'intelligence artificielle, et en particulier l'apprentissage profond
+(\textit{deep learning}), occupe une place de plus en plus importante dans
+de nombreux domaines : reconnaissance d'images, traitement du langage,
+syst\`emes de recommandation, etc. Cependant, les r\'eseaux de neurones sont
+souvent per\c{c}us comme des \textbf{bo\^ites noires} : on conna\^it leurs
+entr\'ees et leurs sorties, mais leur fonctionnement interne (propagation des
+activations, mise \`a jour des poids) reste abstrait, surtout pour les
+personnes qui d\'ecouvrent le domaine.
+
+Par ailleurs, la \textbf{r\'ealit\'e augment\'ee (RA)} permet de superposer
+des objets virtuels au monde r\'eel et offre de nouvelles possibilit\'es
+p\'edagogiques : manipulation d'objets 3D, immersion, interaction naturelle.
+Combiner ces deux univers -- intelligence artificielle et r\'ealit\'e
+augment\'ee -- ouvre la voie \`a des outils p\'edagogiques innovants pour
+mieux comprendre le fonctionnement des mod\`eles d'apprentissage automatique.
+
+\section{Probl\'ematique}
+
+Comment permettre \`a un utilisateur de \textbf{visualiser et de
+manipuler}, en temps r\'eel et en trois dimensions, le fonctionnement
+interne d'un r\'eseau de neurones (propagation des activations, poids,
+biais, m\'etriques d'apprentissage), tout en b\'en\'eficiant de
+l'immersion offerte par la r\'ealit\'e augment\'ee ?
+
+\section{Objectifs du projet}
+
+Le projet NeurAR poursuit les objectifs suivants :
+
+\begin{itemize}
+    \item Concevoir et entra\^iner un r\'eseau de neurones de type MLP sur le
+    jeu de donn\'ees MNIST \`a l'aide de PyTorch ;
+    \item D\'evelopper un backend exposant l'\'etat complet du r\'eseau
+    (architecture, activations, poids, biais, m\'etriques) via une API REST
+    et un canal WebSocket temps r\'eel ;
+    \item Concevoir une application Unity en r\'ealit\'e augment\'ee
+    capable de placer le r\'eseau de neurones dans l'environnement r\'eel et
+    de le repr\'esenter en 3D ;
+    \item Animer visuellement la propagation avant (\textit{forward pass})
+    et la r\'etropropagation (\textit{backward pass}), couche par couche ;
+    \item Permettre \`a l'utilisateur d'interagir avec la sc\`ene
+    (rotation, zoom, s\'election d'un neurone) ;
+    \item Garantir une communication fluide, synchronis\'ee et fiable entre
+    le backend Python et le client Unity.
+\end{itemize}
+
+\section{Plan du rapport}
+
+Ce rapport est organis\'e comme suit. Le chapitre~\ref{chap:archi} pr\'esente
+l'architecture g\'en\'erale de la solution. Le chapitre~\ref{chap:backend}
+d\'ecrit le mod\`ele de r\'eseau de neurones et le backend FastAPI. Le
+chapitre~\ref{chap:comm} d\'etaille le protocole de communication temps
+r\'eel. Le chapitre~\ref{chap:unity} pr\'esente l'application Unity en
+r\'ealit\'e augment\'ee. Le chapitre~\ref{chap:resultats} pr\'esente les
+fonctionnalit\'es r\'ealis\'ees et les apports du projet. Le
+chapitre~\ref{chap:difficultes} revient sur les difficult\'es rencontr\'ees
+et les solutions apport\'ees. Enfin, le chapitre~\ref{chap:conclusion}
+conclut ce rapport et propose des perspectives d'am\'elioration.
+
+
+% =======================================================================
+\chapter{Architecture g\'en\'erale de la solution}
+\label{chap:archi}
+
+\section{Vue d'ensemble}
+
+NeurAR repose sur une architecture \textbf{client-serveur} compos\'ee de
+trois grands blocs : le \textbf{mod\`ele PyTorch}, le \textbf{backend
+FastAPI} et le \textbf{client Unity} en r\'ealit\'e augment\'ee. La
+figure~\ref{fig:archi-globale} sch\'ematise les \'echanges entre ces
+composants.
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[
+    node distance=1.6cm and 2.2cm,
+    box/.style={rectangle, rounded corners, draw=accent, fill=accent!10,
+                 minimum width=3.6cm, minimum height=1.6cm, align=center,
+                 font=\small},
+    arrow/.style={-Stealth, thick, accent}
+]
+    \node[box] (unity) {Application Unity\\(client AR)\\rendu 3D + interactions};
+    \node[box, right=of unity] (backend) {Backend FastAPI\\API REST + WebSocket\\(\texttt{/ws})};
+    \node[box, right=of backend] (model) {Mod\`ele PyTorch\\MLP (NeuroARNet)};
+
+    \draw[arrow] ([yshift=2mm]unity.east) -- node[above, font=\scriptsize]{commandes (forward, backward, reset)} ([yshift=2mm]backend.west);
+    \draw[arrow] ([yshift=-2mm]backend.west) -- node[below, font=\scriptsize]{\'etat du r\'eseau (JSON)} ([yshift=-2mm]unity.east);
+
+    \draw[arrow] ([yshift=2mm]backend.east) -- node[above, font=\scriptsize]{appels internes} ([yshift=2mm]model.west);
+    \draw[arrow] ([yshift=-2mm]model.west) -- node[below, font=\scriptsize]{activations, poids, biais} ([yshift=-2mm]backend.east);
+\end{tikzpicture}
+\caption{Architecture g\'en\'erale de NeurAR}
+\label{fig:archi-globale}
+\end{figure}
+
+\section{R\^ole de chaque composant}
+
+\subsection{Le mod\`ele PyTorch}
+Le mod\`ele est un \textit{Multi-Layer Perceptron} (MLP) entra\^in\'e sur le
+jeu de donn\'ees MNIST. Il est responsable du calcul des activations, des
+poids et des biais de chaque couche, ainsi que des m\'etriques
+d'apprentissage (perte, pr\'ecision).
+
+\subsection{Le backend FastAPI}
+Le backend joue le r\^ole d'interm\'ediaire entre le mod\`ele et le client.
+Il expose :
+\begin{itemize}
+    \item une \textbf{API REST} pour les requ\^etes ponctuelles
+    (sant\'e du serveur, architecture du mod\`ele, instantan\'e du r\'eseau,
+    forward pass) ;
+    \item un \textbf{canal WebSocket} (\texttt{/ws}) pour les interactions
+    temps r\'eel (lancement d'un forward pass ou backward pass, r\'einitialisation
+    du mod\`ele, diffusion de l'\'etat du r\'eseau couche par couche).
+\end{itemize}
+
+\subsection{L'application Unity (client AR)}
+L'application Unity re\c{c}oit les donn\'ees JSON envoy\'ees par le backend,
+les interpr\`ete et construit une repr\'esentation 3D du r\'eseau de
+neurones plac\'ee dans l'environnement r\'eel via la r\'ealit\'e augment\'ee.
+Elle g\`ere \'egalement les interactions de l'utilisateur (rotation, zoom,
+s\'election de neurone).
+
+\section{Technologies utilis\'ees}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Composant} & \textbf{Technologies} \\
+\midrule
+Mod\`ele de r\'eseau de neurones & Python, PyTorch, torchvision, MNIST \\
+Backend & Python, FastAPI, WebSocket, Pydantic \\
+Client AR & Unity 6000.4.3f1, AR Foundation, C\# \\
+Format d'\'echange & JSON (camelCase, compatible C\#) \\
+\bottomrule
+\end{tabular}
+\caption{Technologies utilis\'ees dans le projet NeurAR}
+\end{table}
+
+
+% =======================================================================
+\chapter{Le mod\`ele de r\'eseau de neurones et le backend}
+\label{chap:backend}
+
+\section{Architecture du r\'eseau (NeuroARNet)}
+
+Le r\'eseau de neurones impl\'ement\'e, nomm\'e \texttt{NeuroARNet}, est un
+\textbf{MLP enti\`erement connect\'e et configurable}. Son architecture est
+d\'efinie par une simple liste d'entiers (par exemple
+\texttt{[784, 128, 64, 10]}), modifiable via le fichier de configuration
+\texttt{.env}. Pour cette architecture par d\'efaut :
+
+\begin{itemize}
+    \item \textbf{Couche d'entr\'ee} : 784 neurones (image MNIST $28\times28$
+    aplatie) ;
+    \item \textbf{Couche cach\'ee 1} : \texttt{Linear(784 $\rightarrow$ 128)}
+    + \texttt{BatchNorm} + \texttt{ReLU} ;
+    \item \textbf{Couche cach\'ee 2} : \texttt{Linear(128 $\rightarrow$ 64)}
+    + \texttt{BatchNorm} + \texttt{ReLU} ;
+    \item \textbf{Couche de sortie} : \texttt{Linear(64 $\rightarrow$ 10)} +
+    \texttt{Softmax} (probabilit\'es des 10 chiffres).
+\end{itemize}
+
+La figure~\ref{fig:mlp} illustre cette architecture sous forme simplifi\'ee.
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[
+    neuron/.style={circle, draw=accent, fill=accent!20, minimum size=0.5cm},
+    neuronout/.style={circle, draw=accentlight, fill=accentlight!30, minimum size=0.5cm},
+    layerlabel/.style={font=\small, align=center}
+]
+    % Couche d'entrée (4 neurones représentés)
+    \foreach \i in {1,...,4}
+        \node[neuron] (I-\i) at (0, -\i*0.8) {};
+    \node[layerlabel] at (0, -4.6) {Entr\'ee\\(784)};
+
+    % Couche cachée 1 (5 neurones représentés)
+    \foreach \i in {1,...,5}
+        \node[neuron] (H1-\i) at (3, -\i*0.8+0.4) {};
+    \node[layerlabel] at (3, -4.6) {Cach\'ee 1\\(128)\\Linear+BN+ReLU};
+
+    % Couche cachée 2 (4 neurones représentés)
+    \foreach \i in {1,...,4}
+        \node[neuron] (H2-\i) at (6, -\i*0.8) {};
+    \node[layerlabel] at (6, -4.6) {Cach\'ee 2\\(64)\\Linear+BN+ReLU};
+
+    % Couche de sortie (3 neurones représentés)
+    \foreach \i in {1,...,3}
+        \node[neuronout] (O-\i) at (9, -\i*0.8-0.4) {};
+    \node[layerlabel] at (9, -4.6) {Sortie\\(10)\\Linear+Softmax};
+
+    % Connexions entrée -> cachée 1
+    \foreach \i in {1,...,4}
+        \foreach \j in {1,...,5}
+            \draw[gray!40, thin] (I-\i) -- (H1-\j);
+
+    % Connexions cachée 1 -> cachée 2
+    \foreach \i in {1,...,5}
+        \foreach \j in {1,...,4}
+            \draw[gray!40, thin] (H1-\i) -- (H2-\j);
+
+    % Connexions cachée 2 -> sortie
+    \foreach \i in {1,...,4}
+        \foreach \j in {1,...,3}
+            \draw[gray!40, thin] (H2-\i) -- (O-\j);
+\end{tikzpicture}
+\caption{Repr\'esentation simplifi\'ee de l'architecture du MLP NeuroARNet}
+\label{fig:mlp}
+\end{figure}
+
+\section{Suivi des activations, poids et biais}
+
+\`A chaque \textit{forward pass}, le mod\`ele conserve les activations de
+toutes les couches (y compris la couche d'entr\'ee). Le
+\texttt{ModelManager} expose ensuite ces informations sous une forme
+exploitable par Unity :
+
+\begin{itemize}
+    \item les \textbf{activations} de chaque couche sont normalis\'ees entre
+    0 et 1 (min-max scaling) afin d'\^etre directement utilis\'ees pour
+    l'intensit\'e visuelle des neurones ;
+    \item les \textbf{poids} de chaque couche sont normalis\'es entre $-1$ et
+    $1$ via la fonction $\tanh$, ce qui conserve leur signe tout en bornant
+    leur amplitude pour l'affichage des connexions ;
+    \item les \textbf{biais} de chaque neurone sont transmis tels quels.
+\end{itemize}
+
+\section{Entra\^inement et m\'etriques}
+
+Le mod\`ele est entra\^in\'e/optimis\'e sur des \'echantillons du jeu de
+donn\'ees \textbf{MNIST}, t\'el\'echarg\'e automatiquement au premier
+lancement. \`A chaque \textit{backward pass}, un optimiseur SGD met \`a jour
+les poids du r\'eseau \`a partir d'un \'echantillon, et les m\'etriques
+suivantes sont recalcul\'ees :
+
+\begin{itemize}
+    \item la \textbf{perte} (\textit{loss}), calcul\'ee via la
+    \textit{negative log-likelihood} ;
+    \item la \textbf{pr\'ecision} (\textit{accuracy}), \'egale \`a 1 si la
+    classe pr\'edite correspond \`a l'\'etiquette attendue, 0 sinon.
+\end{itemize}
+
+\section{Mod\'elisation des donn\'ees \'echang\'ees}
+
+Pour garantir la compatibilit\'e directe avec les classes C\# du c\^ot\'e
+Unity, les mod\`eles de donn\'ees Python (Pydantic) g\'en\`erent
+automatiquement des alias en \texttt{camelCase}. Trois structures
+principales sont d\'efinies :
+
+\begin{itemize}
+    \item \texttt{NeuronData} : un neurone (couche, index, activation, biais,
+    fonction d'activation) ;
+    \item \texttt{LayerData} : une couche compl\`ete (type, liste de
+    neurones, poids) ;
+    \item \texttt{NetworkData} : l'\'etat complet du r\'eseau (nom du
+    mod\`ele, nombre de couches, liste des couches, phase, perte,
+    pr\'ecision).
+\end{itemize}
+
+\section{API REST}
+
+Le tableau~\ref{tab:rest} r\'esume les points d'entr\'ee REST expos\'es par
+le backend.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{M\'ethode} & \textbf{Route} & \textbf{Description} \\
+\midrule
+GET & \texttt{/health} & V\'erifie que le serveur et le mod\`ele sont op\'erationnels \\
+GET & \texttt{/network} & Retourne un instantan\'e complet du r\'eseau \\
+POST & \texttt{/forward} & Ex\'ecute un forward pass sur une entr\'ee donn\'ee \\
+GET & \texttt{/architecture} & Retourne la configuration et le nombre de param\`etres \\
+\bottomrule
+\end{tabular}
+\caption{Points d'entr\'ee de l'API REST}
+\label{tab:rest}
+\end{table}
+
+
+% =======================================================================
+\chapter{Communication temps r\'eel}
+\label{chap:comm}
+
+\section{Le canal WebSocket}
+
+La communication temps r\'eel entre le backend et le client Unity repose sur
+un canal \textbf{WebSocket} (\texttt{/ws}). Le client envoie un message JSON
+contenant un champ \texttt{action}, et le serveur r\'epond par un ou
+plusieurs messages \texttt{NetworkData}.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{lp{9cm}}
+\toprule
+\textbf{Action} & \textbf{Comportement} \\
+\midrule
+\texttt{get\_network} & Envoie l'\'etat complet du r\'eseau (phase \texttt{init}) \\
+\texttt{forward\_pass} & Ex\'ecute un forward pass sur un \'echantillon MNIST
+al\'eatoire et diffuse le r\'esultat \textbf{couche par couche} (d\'elai de
+100~ms entre chaque couche), puis l'\'etat final complet \\
+\texttt{backward\_pass} & Ex\'ecute un backward pass (mise \`a jour des
+poids) et diffuse le nouvel \'etat \\
+\texttt{reset} & R\'einitialise le mod\`ele (nouveaux poids al\'eatoires) et
+diffuse le nouvel \'etat \\
+\bottomrule
+\end{tabular}
+\caption{Actions support\'ees par le canal WebSocket}
+\end{table}
+
+\section{Sc\'enario d'animation du forward pass}
+
+La figure~\ref{fig:sequence} pr\'esente le sc\'enario d'\'echange lors d'un
+\textit{forward pass}. L'envoi couche par couche, avec un l\'eger d\'elai,
+permet \`a Unity d'animer progressivement la propagation de l'activation \`a
+travers le r\'eseau.
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[
+    node distance=1.4cm,
+    every node/.style={font=\small},
+    actor/.style={rectangle, rounded corners, draw=accent, fill=accent!10,
+                   minimum width=3cm, minimum height=0.9cm, align=center},
+    arrow/.style={-Stealth, thick, accent}
+]
+    \node[actor] (u) at (0,0) {Unity (client)};
+    \node[actor] (b) at (8,0) {Backend FastAPI};
+
+    \draw[arrow] (u.east) -- node[above]{\{action: forward\_pass\}} (b.west);
+
+    \draw[dashed, gray] (0,-1) -- (0,-6.5);
+    \draw[dashed, gray] (8,-1) -- (8,-6.5);
+
+    \draw[arrow] (8,-2) -- node[above]{couche 0 (entr\'ee)} (0,-2);
+    \draw[arrow] (8,-3) -- node[above]{couche 1 (apr\`es 100~ms)} (0,-3);
+    \draw[arrow] (8,-4) -- node[above]{couche 2 (apr\`es 100~ms)} (0,-4);
+    \draw[arrow] (8,-5) -- node[above]{couche 3 / sortie (apr\`es 100~ms)} (0,-5);
+    \draw[arrow] (8,-6) -- node[above]{\'etat final complet (loss, accuracy)} (0,-6);
+\end{tikzpicture}
+\caption{S\'equence d'\'echange lors d'un forward pass}
+\label{fig:sequence}
+\end{figure}
+
+\section{Gestion de la taille des messages}
+
+Le snapshot complet du r\'eseau (poids inclus) repr\'esente un volume
+important : pour une couche $784 \rightarrow 128$, cela correspond \`a
+environ 100~000 valeurs, soit environ \textbf{2,4~Mo} en JSON. Cette
+contrainte a un impact direct sur la configuration du client WebSocket
+Unity (cf.~chapitre~\ref{chap:difficultes}).
+
+
+% =======================================================================
+\chapter{Application Unity en r\'ealit\'e augment\'ee}
+\label{chap:unity}
+
+\section{Vue d'ensemble}
+
+L'application client est d\'evelopp\'ee avec \textbf{Unity 6000.4.3f1} et le
+framework \textbf{AR Foundation}. Elle est organis\'ee en plusieurs modules
+sp\'ecialis\'es, list\'es dans le tableau~\ref{tab:unity-scripts}.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{lp{9.5cm}}
+\toprule
+\textbf{Module} & \textbf{R\^ole} \\
+\midrule
+\texttt{ARPlacementManager} & Placement du r\'eseau de neurones virtuel dans
+l'environnement r\'eel \\
+\texttt{ARInteractionManager} & Gestion des interactions utilisateur :
+rotation, zoom, s\'election d'un neurone \\
+\texttt{WebSocketClient} & Connexion et communication avec le backend via
+WebSocket \\
+\texttt{NetworkDataParser} & D\'es\'erialisation des messages JSON re\c{c}us
+en objets \texttt{NetworkData} \\
+\texttt{UnityMainThreadDispatcher} & Ex\'ecution des mises \`a jour re\c{c}ues
+de mani\`ere asynchrone sur le thread principal Unity \\
+\texttt{NetworkRenderer} & Construction et mise \`a jour de la sc\`ene 3D du
+r\'eseau \\
+\texttt{NetworkLayer} & Repr\'esentation d'une couche du r\'eseau \\
+\texttt{NeuronVisual} & Repr\'esentation visuelle d'un neurone (couleur,
+intensit\'e selon l'activation) \\
+\texttt{ConnectionVisual} & Repr\'esentation visuelle d'une connexion
+(\'epaisseur/couleur selon le poids) \\
+\bottomrule
+\end{tabular}
+\caption{Principaux modules de l'application Unity}
+\label{tab:unity-scripts}
+\end{table}
+
+\section{Cha\^ine de traitement c\^ot\'e Unity}
+
+\begin{enumerate}
+    \item Le \texttt{WebSocketClient} se connecte au backend et envoie les
+    actions demand\'ees (\texttt{get\_network}, \texttt{forward\_pass}, etc.) ;
+    \item Les messages JSON re\c{c}us sont transmis au
+    \texttt{NetworkDataParser}, qui les convertit en objets
+    \texttt{NetworkData} / \texttt{LayerData} / \texttt{NeuronData} ;
+    \item L'\texttt{UnityMainThreadDispatcher} planifie la mise \`a jour de la
+    sc\`ene sur le thread principal ;
+    \item Le \texttt{NetworkRenderer} met \`a jour les \texttt{NeuronVisual}
+    et \texttt{ConnectionVisual} en fonction des nouvelles activations,
+    poids et biais ;
+    \item L'\texttt{ARPlacementManager} et l'\texttt{ARInteractionManager}
+    permettent \`a l'utilisateur de positionner et de manipuler la sc\`ene
+    dans son environnement r\'eel.
+\end{enumerate}
+
+\section{Repr\'esentation visuelle}
+
+Chaque \textbf{neurone} est repr\'esent\'e par un objet 3D dont la couleur ou
+l'intensit\'e lumineuse refl\`ete sa valeur d'activation normalis\'ee.
+Chaque \textbf{connexion} entre deux neurones est repr\'esent\'ee par un
+segment dont l'apparence (couleur, \'epaisseur) refl\`ete le poids associ\'e
+(normalis\'e entre $-1$ et $1$). Lors d'un forward pass, les couches
+s'illuminent successivement, donnant une animation visuelle de la
+propagation de l'information \`a travers le r\'eseau.
+
+
+% =======================================================================
+\chapter{Fonctionnalit\'es r\'ealis\'ees et apports du projet}
+\label{chap:resultats}
+
+\section{Fonctionnalit\'es r\'ealis\'ees}
+
+\begin{itemize}
+    \item Visualisation du r\'eseau de neurones, couche par couche, en 3D et
+    en r\'ealit\'e augment\'ee ;
+    \item Animation du \textbf{forward pass} : propagation visuelle de
+    l'activation \`a travers les couches ;
+    \item Animation du \textbf{backward pass} : mise \`a jour visuelle des
+    poids apr\`es apprentissage ;
+    \item Affichage en direct des valeurs d'activation, des poids et des
+    biais de chaque neurone ;
+    \item Suivi en temps r\'eel de la \textbf{perte (loss)} et de la
+    \textbf{pr\'ecision (accuracy)} du mod\`ele ;
+    \item R\'einitialisation du mod\`ele \`a la demande (nouveaux poids
+    al\'eatoires) ;
+    \item Interactions en r\'ealit\'e augment\'ee : placement de la sc\`ene,
+    rotation, zoom et s\'election d'un neurone pour afficher ses d\'etails.
+\end{itemize}
+
+\section{Apports et points forts du projet}
+
+\begin{itemize}
+    \item \textbf{Approche p\'edagogique innovante} : le projet rend visible
+    et manipulable le fonctionnement interne d'un r\'eseau de neurones,
+    habituellement abstrait ;
+    \item \textbf{Architecture d\'ecoupl\'ee et r\'eutilisable} : le backend
+    FastAPI est ind\'ependant du client et pourrait servir d'autres
+    applications (web, mobile) sans modification ;
+    \item \textbf{Communication temps r\'eel performante} gr\^ace au
+    WebSocket et \`a la diffusion couche par couche ;
+    \item \textbf{Mod\`ele configurable} : l'architecture du MLP est
+    modifiable simplement via le fichier \texttt{.env}, sans modification du
+    code ;
+    \item \textbf{Compatibilit\'e stricte avec Unity/C\#} gr\^ace \`a la
+    g\'en\'eration automatique d'alias \texttt{camelCase} dans les mod\`eles
+    Pydantic ;
+    \item \textbf{Exp\'erience immersive} en r\'ealit\'e augment\'ee,
+    utilisable sur smartphone ou casque AR compatible ;
+    \item \textbf{Projet transversal} couvrant trois domaines compl\'ementaires :
+    intelligence artificielle (PyTorch), d\'eveloppement backend (FastAPI) et
+    applications immersives (Unity / AR Foundation).
+\end{itemize}
+
+
+% =======================================================================
+\chapter{Difficult\'es rencontr\'ees et solutions apport\'ees}
+\label{chap:difficultes}
+
+\begin{itemize}
+    \item \textbf{Volume de donn\'ees important} : un instantan\'e complet du
+    r\'eseau (poids inclus) repr\'esente environ 2,4~Mo en JSON.\\
+    \textit{Solution} : augmentation de la limite de taille des messages
+    accept\'es par le client WebSocket Unity (\texttt{NativeWebSocket} /
+    \texttt{websocket-sharp}) pour \'eviter toute d\'econnexion lors de la
+    r\'eception du r\'eseau complet.
+
+    \item \textbf{Synchronisation entre le calcul backend et l'animation
+    Unity} : un envoi instantan\'e de toutes les couches rendrait
+    l'animation illisible.\\
+    \textit{Solution} : diffusion des couches une \`a une, avec un d\'elai
+    contr\^ol\'e de 100~ms entre chaque couche, pour produire une animation
+    fluide et compr\'ehensible.
+
+    \item \textbf{Alignement strict entre les mod\`eles Python et les classes
+    C\# Unity} : toute diff\'erence de nommage entre les champs JSON et les
+    propri\'et\'es C\# emp\^eche la d\'es\'erialisation correcte.\\
+    \textit{Solution} : mise en place d'une classe de base
+    \texttt{CamelModel} g\'en\'erant automatiquement des alias
+    \texttt{camelCase} pour chaque champ, garantissant une correspondance
+    exacte avec \texttt{NetworkData}, \texttt{LayerData} et
+    \texttt{NeuronData} c\^ot\'e Unity.
+
+    \item \textbf{Stabilit\'e du mod\`ele en mode \'evaluation lors du
+    backward pass} : l'utilisation de \texttt{BatchNorm} sur un batch de
+    taille~1 peut poser probl\`eme.\\
+    \textit{Solution} : conservation du mode \texttt{eval()} du r\'eseau,
+    ce qui permet \`a \texttt{BatchNorm} d'utiliser ses statistiques
+    courantes (\textit{running stats}) tout en laissant les gradients se
+    propager normalement pour la mise \`a jour des poids.
+
+    \item \textbf{Mise en place de l'environnement de r\'ealit\'e
+    augment\'ee} : configuration de AR Foundation, gestion multi-plateforme
+    (Android/iOS) et tests sur appareil physique, n\'ecessaires pour valider
+    le placement et le suivi de la sc\`ene en conditions r\'eelles.
+\end{itemize}
+
+
+% =======================================================================
+\chapter{Conclusion et perspectives}
+\label{chap:conclusion}
+
+\section{Conclusion}
+
+Le projet \textbf{NeurAR} a permis de concevoir une cha\^ine compl\`ete
+allant de l'entra\^inement d'un mod\`ele de r\'eseau de neurones avec
+PyTorch, jusqu'\`a sa visualisation interactive en r\'ealit\'e augment\'ee
+via Unity, en passant par un backend temps r\'eel bas\'e sur FastAPI et
+WebSocket. Il r\'epond \`a une probl\'ematique p\'edagogique concr\`ete : la
+difficult\'e de comprendre le fonctionnement interne des r\'eseaux de
+neurones, en proposant une exp\'erience immersive, visuelle et interactive.
+
+Les principaux r\'esultats obtenus sont :
+\begin{itemize}
+    \item un mod\`ele MLP fonctionnel, configurable et entra\^in\'e sur MNIST ;
+    \item un backend robuste exposant l'\'etat du r\'eseau via REST et
+    WebSocket, avec une animation couche par couche ;
+    \item une application Unity AR capable d'afficher et d'animer le r\'eseau
+    en 3D, avec des interactions utilisateur (rotation, zoom, s\'election).
+\end{itemize}
+
+\section{Perspectives d'am\'elioration}
+
+Plusieurs pistes permettraient d'enrichir le projet :
+
+\begin{itemize}
+    \item \textbf{Support d'autres architectures} de r\'eseaux de neurones
+    (r\'eseaux convolutifs CNN, r\'eseaux r\'ecurrents RNN) ;
+    \item \textbf{Mode multi-utilisateurs} permettant \`a plusieurs personnes
+    de visualiser et manipuler la m\^eme sc\`ene AR simultan\'ement ;
+    \item \textbf{Entra\^inement interactif} : permettre de modifier les
+    hyperparam\`etres (taux d'apprentissage, architecture) directement depuis
+    l'application et observer l'impact en direct ;
+    \item \textbf{Optimisation de la taille des donn\'ees transmises}, par
+    exemple via la compression ou l'envoi de mises \`a jour diff\'erentielles
+    (\textit{delta-update}) plut\^ot que l'\'etat complet \`a chaque \'etape ;
+    \item \textbf{D\'eploiement sur casques AR/VR autonomes} (HoloLens,
+    Meta Quest) pour une exp\'erience totalement immersive et mains libres.
+\end{itemize}
+
+\end{document}
